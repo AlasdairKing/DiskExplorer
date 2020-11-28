@@ -75,16 +75,15 @@ Friend Class frmMain
 
 		mFontChangedByUser = CBool(GetSettingIni("Disk Explorer", "Font", "ChangedByUser", "False"))
 		If mFontChangedByUser Then
-			lstDisplay.Font = VB6.FontChangeSize(lstDisplay.Font, CDec(GetSettingIni("Disk Explorer", "Font", "Size", CStr(lstDisplay.Font.SizeInPoints))))
+			'TODO check out what is happening with fonts. Why are we changing manually?
+			'lstDisplay.Font = VB6.FontChangeSize(lstDisplay.Font, CDec(GetSettingIni("Disk Explorer", "Font", "Size", CStr(lstDisplay.Font.SizeInPoints))))
 		Else
             'TODO Call modLargeFonts.ApplySystemSettingsToForm(Me)
 		End If
         mnuFileRunOrOpen.Text = mnuFileRunOrOpen.Text
         Me.mnuNavigateBack.Text = Me.mnuNavigateBack.Text
         Me.mnuNavigateUp.Text = Me.mnuNavigateUp.Text
-        Me.mnuViewFontsize(0).Text = mnuViewFontsize(0).Text
-        Me.mnuViewFontsize(1).Text = mnuViewFontsize(1).Text
-		
+
 		mnuOptionsStartupwithcomputer.Checked = CBool(modPath.GetSettingIni("Disk Explorer", "Program", "Startup", CStr(False)))
 		Call ApplyStartup()
 		
@@ -99,37 +98,8 @@ Friend Class frmMain
 		mnuViewAll.Checked = True
 		Call Display()
 	End Sub
-	
-	'UPGRADE_WARNING: Event frmMain.Resize may fire when form is initialized. Click for more: 'ms-help://MS.VSCC.v90/dv_commoner/local/redirect.htm?keyword="88B12AE1-6DE0-48A0-86F1-60C0686C026A"'
-	Private Sub frmMain_Resize(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles MyBase.Resize
-		On Error Resume Next
-		lstDisplay.Left = 0
-		lstDisplay.Top = 0
-		lstIcons.Width = VB6.TwipsToPixelsX(25 * lstDisplay.Font.SizeInPoints)
-		lstIcons.Left = 0
-		lstDisplay.Left = lstIcons.Width
-		lstIcons.Top = 0
-		lstDisplay.Width = VB6.TwipsToPixelsX(VB6.PixelsToTwipsX(Me.ClientRectangle.Width) - VB6.PixelsToTwipsX(lstIcons.Width))
-		If Me.mnuViewTouchscreen.Checked Then
-			cmdGo.Visible = True
-			cmdBack.Visible = True
-			cmdUp.Visible = True
-			lstDisplay.Height = VB6.TwipsToPixelsY(VB6.PixelsToTwipsY(Me.ClientRectangle.Height) - VB6.PixelsToTwipsY(staMain.Height) - VB6.PixelsToTwipsY(cmdGo.Height))
-			cmdGo.Left = 0
-			cmdBack.Left = VB6.TwipsToPixelsX(VB6.PixelsToTwipsX(cmdGo.Left) + VB6.PixelsToTwipsX(cmdGo.Width))
-			cmdUp.Left = VB6.TwipsToPixelsX(VB6.PixelsToTwipsX(cmdBack.Left) + VB6.PixelsToTwipsX(cmdBack.Width))
-			cmdGo.Top = VB6.TwipsToPixelsY(VB6.PixelsToTwipsY(lstDisplay.Top) + VB6.PixelsToTwipsY(lstDisplay.Height))
-			cmdBack.Top = cmdGo.Top
-			cmdUp.Top = cmdGo.Top
-		Else
-			cmdGo.Visible = False
-			cmdBack.Visible = False
-			cmdUp.Visible = False
-			lstDisplay.Height = VB6.TwipsToPixelsY(VB6.PixelsToTwipsY(Me.ClientRectangle.Height) - VB6.PixelsToTwipsY(staMain.Height))
-		End If
-		lstIcons.Height = lstDisplay.Height
-	End Sub
-	
+
+
 	Private Sub frmMain_FormClosed(ByVal eventSender As System.Object, ByVal eventArgs As System.Windows.Forms.FormClosedEventArgs) Handles Me.FormClosed
 		On Error Resume Next
 		Dim f As System.Windows.Forms.Form
@@ -171,8 +141,8 @@ Friend Class frmMain
 			For	Each fo In mFol.SubFolders
 				'Debug.Print fo.name & " " & fo.Attributes
 				If (fo.Attributes And Scripting.__MIDL___MIDL_itf_scrrun_0000_0000_0001.Hidden) = 0 Then
-                    folderCount = folderCount + 1
-                    addedTo = lstDisplay.Items.Add(fo.Name & " " & GetText("Folder"))
+					folderCount += 1
+					addedTo = lstDisplay.Items.Add(fo.Name & " " & GetText("Folder"))
                     Call lstIcons.Items.Insert(addedTo, "[]")
 					newItem = New clsItem
 					newItem.path = fo.path
@@ -253,26 +223,26 @@ Friend Class frmMain
         VB6.SetItemData(lstDisplay, addedTo, mItems.Count())
 		'Drive
 		For	Each d In mFSO.Drives
-			If d.DriveType = Scripting.__MIDL___MIDL_itf_scrrun_0001_0000_0001.Fixed Or d.DriveType = Scripting.__MIDL___MIDL_itf_scrrun_0001_0000_0001.CDRom Or d.DriveType = Scripting.__MIDL___MIDL_itf_scrrun_0001_0000_0001.Removable Then
+			If d.DriveType = Scripting.DriveTypeConst.Fixed Or d.DriveType = Scripting.DriveTypeConst.CDRom Or d.DriveType = Scripting.DriveTypeConst.Removable Then
 				name_Renamed = GetText("Go to") & " " & d.DriveLetter & " drive "
 				newItem = New clsItem
-				newItem.path = d.path
-				If d.DriveType = Scripting.__MIDL___MIDL_itf_scrrun_0001_0000_0001.Fixed Then
-                    newItem.itemType_Renamed = clsItem.itemType.MAIN_DRIVE
+				newItem.path = d.Path
+				If d.DriveType = Scripting.DriveTypeConst.Fixed Then
+					newItem.itemType_Renamed = clsItem.itemType.MAIN_DRIVE
 					name_Renamed = name_Renamed & GetText("(hard disk)")
-				ElseIf d.DriveType = Scripting.__MIDL___MIDL_itf_scrrun_0001_0000_0001.CDRom Then 
-                    newItem.itemType_Renamed = clsItem.itemType.CD_DRIVE
+				ElseIf d.DriveType = Scripting.DriveTypeConst.CDRom Then
+					newItem.itemType_Renamed = clsItem.itemType.CD_DRIVE
 					name_Renamed = name_Renamed & GetText("(CD drive)")
-				ElseIf d.DriveType = Scripting.__MIDL___MIDL_itf_scrrun_0001_0000_0001.Removable Then 
-                    newItem.itemType_Renamed = clsItem.itemType.USB_DRIVE
-					name_Renamed = name_Renamed & GetText("(USB drive)")
+				ElseIf d.DriveType = Scripting.DriveTypeConst.Removable Then
+					newItem.itemType_Renamed = clsItem.itemType.USB_DRIVE
+					name_Renamed &= GetText("(USB drive)")
 				End If
-                Call mItems.Add(newItem)
-                addedTo = lstDisplay.Items.Count
+				Call mItems.Add(newItem)
+				addedTo = lstDisplay.Items.Count
 				Call lstDisplay.Items.Insert(lstDisplay.Items.Count, name_Renamed)
 				Call lstIcons.Items.Insert(lstDisplay.Items.Count - 1, "D")
 				'UPGRADE_ISSUE: ListBox property lstDisplay.NewIndex was not upgraded. Click for more: 'ms-help://MS.VSCC.v90/dv_commoner/local/redirect.htm?keyword="F649E068-7137-45E5-AC20-4D80A3CC70AC"'
-                VB6.SetItemData(lstDisplay, addedTo, mItems.Count())
+				VB6.SetItemData(lstDisplay, addedTo, mItems.Count())
 			End If
 		Next d
 		
@@ -434,10 +404,7 @@ CreationError:
 	
 	Public Sub mnuHelpManual_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles mnuHelpManual.Click
 		On Error Resume Next
-		'UPGRADE_ISSUE: Load statement is not supported. Click for more: 'ms-help://MS.VSCC.v90/dv_commoner/local/redirect.htm?keyword="B530EFF2-3132-48F8-B8BC-D88AF543D321"'
-        frmHelp = New frmHelp
-		frmHelp.Icon = Me.Icon
-		Call VB6.ShowForm(frmHelp, VB6.FormShowConstants.Modal, Me)
+		'TODO Add help manual call.
 	End Sub
 	
 	Public Sub mnuNavigateBack_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles mnuNavigateBack.Click
@@ -504,39 +471,20 @@ CreationError:
 		mnuViewAll.Checked = False
 		Call Display(True)
 	End Sub
-	
-	Public Sub mnuViewFontsize_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles mnuViewFontsize.Click
-		Dim index As Short = mnuViewFontsize.GetIndex(eventSender)
-		On Error Resume Next
-		If index = 0 Then
-			'Increase font size
-			lstDisplay.Font = VB6.FontChangeSize(lstDisplay.Font, lstDisplay.Font.SizeInPoints + 1)
-			Call SaveSettingIni("Disk Explorer", "Font", "ChangedByUser", CStr(True))
-		Else
-			'Decrease font size
-			lstDisplay.Font = VB6.FontChangeSize(lstDisplay.Font, lstDisplay.Font.SizeInPoints - 1)
-			Call SaveSettingIni("Disk Explorer", "Font", "ChangedByUser", CStr(True))
-		End If
-	End Sub
-	
-	Public Sub mnuViewTouchscreen_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles mnuViewTouchscreen.Click
-		On Error Resume Next
-		mnuViewTouchscreen.Checked = Not mnuViewTouchscreen.Checked
-		Call frmMain_Resize(Me, New System.EventArgs())
-	End Sub
-	
-	Private Sub tmrUpdateIcons_Tick(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles tmrUpdateIcons.Tick
-        On Error Resume Next
-        If lstIcons.Font.Size <> lstDisplay.Font.Size Then
-            lstIcons.Font = VB6.FontChangeSize(lstIcons.Font, lstDisplay.Font.SizeInPoints)
-        End If
-        If lstIcons.TopIndex <> lstDisplay.TopIndex Then
-            lstIcons.TopIndex = lstDisplay.TopIndex
-        End If
-        ShowScrollBar(lstIcons.Handle.ToInt32, SB_VERT, False)
-    End Sub
 
-    Private Sub lstDisplay_DoubleClick(ByVal sender As Object, ByVal e As System.EventArgs) Handles lstDisplay.DoubleClick
+
+	Private Sub tmrUpdateIcons_Tick(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles tmrUpdateIcons.Tick
+		On Error Resume Next
+		If lstIcons.Font.Size <> lstDisplay.Font.Size Then
+			lstIcons.Font = VB6.FontChangeSize(lstIcons.Font, lstDisplay.Font.SizeInPoints)
+		End If
+		If lstIcons.TopIndex <> lstDisplay.TopIndex Then
+			lstIcons.TopIndex = lstDisplay.TopIndex
+		End If
+		ShowScrollBar(lstIcons.Handle.ToInt32, SB_VERT, False)
+	End Sub
+
+	Private Sub lstDisplay_DoubleClick(ByVal sender As Object, ByVal e As System.EventArgs) Handles lstDisplay.DoubleClick
         On Error Resume Next
         Call lstDisplay_KeyPress(lstDisplay, New System.Windows.Forms.KeyPressEventArgs(Chr(System.Windows.Forms.Keys.Return)))
     End Sub
@@ -614,12 +562,12 @@ EventExitSub:
         Dim KeyCode As Short = e.KeyCode
         Dim Shift As Short = e.KeyData \ &H10000
         If (Shift And VB6.ShiftConstants.CtrlMask) > 0 Then
-            If KeyCode = 187 Or KeyCode = System.Windows.Forms.Keys.Add Then
-                Call mnuViewFontsize_Click(mnuViewFontsize.Item(0), New System.EventArgs())
-            ElseIf KeyCode = 189 Or KeyCode = System.Windows.Forms.Keys.Subtract Then
-                Call mnuViewFontsize_Click(mnuViewFontsize.Item(1), New System.EventArgs())
-            End If
-        ElseIf (Shift And VB6.ShiftConstants.AltMask) > 0 Then
+			If KeyCode = 187 Or KeyCode = System.Windows.Forms.Keys.Add Then
+				'TODO make font bigger.
+				'TODO make font smaller.
+			ElseIf KeyCode = 189 Or KeyCode = System.Windows.Forms.Keys.Subtract Then
+			End If
+		ElseIf (Shift And VB6.ShiftConstants.AltMask) > 0 Then
             If KeyCode = System.Windows.Forms.Keys.Up Then
                 Call mnuNavigateUp_Click(mnuNavigateUp, New System.EventArgs())
             ElseIf KeyCode = System.Windows.Forms.Keys.Left Then
@@ -627,4 +575,8 @@ EventExitSub:
             End If
         End If
     End Sub
+
+	Private Sub _mnuViewFontsize_0_Click(sender As Object, e As EventArgs) Handles _mnuViewFontsize_0.Click
+
+	End Sub
 End Class
